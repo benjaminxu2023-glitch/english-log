@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>English Log · 每日英文日记</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#222;--muted:#666;--line:#dcdfe4;--accent:#1f5fbf;--bad:#b3261e;--ok:#1e7a3c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:10px 14px calc(0px);padding-top:max(10px,env(safe-area-inset-top))}
+h1{font-size:18px;margin:0 0 8px}
+h1 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+nav{display:flex;gap:0}
+nav button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:8px 0;font:inherit;font-size:15px;color:var(--muted)}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:720px;margin:0 auto;padding:14px 14px 60px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input[type=date],input[type=password],input[type=text],textarea{width:100%;font:inherit;font-size:16px;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px}
+textarea{min-height:200px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:0 0 auto}
+.grow{flex:1 1 auto}
+button.b{font:inherit;font-size:15px;padding:10px 14px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--text)}
+button.p{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.d{color:var(--bad)}
+button:disabled{opacity:.5}
+.hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+.msg{font-size:14px;margin:8px 0 0;padding:8px 10px;border-radius:6px;background:#f0f2f5;display:none}
+.msg.on{display:block}.msg.err{background:#fbeceb;color:var(--bad)}.msg.ok{background:#e9f5ec;color:var(--ok)}
+.chg{border-top:1px solid var(--line);padding:10px 0}
+.chg:first-child{border-top:0}
+.chg .o{color:var(--bad);text-decoration:line-through;text-decoration-thickness:1px}
+.chg .n{color:var(--ok);font-weight:600}
+.chg .w{color:var(--muted);font-size:14px}
+.chg .a{font-size:14px}
+.chg>div{display:flex;gap:6px}.k{flex:0 0 50px;font-size:12px;color:var(--muted);padding-top:2px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px}
+.stat b{display:block;font-size:20px}
+.stat span{font-size:12px;color:var(--muted)}
+details.e{background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+details.e summary{padding:12px 14px;cursor:pointer;list-style:none}
+details.e summary::-webkit-details-marker{display:none}
+details.e summary b{margin-right:8px}
+details.e summary span{font-size:13px;color:var(--muted)}
+details.e .body{padding:0 14px 12px}
+.txt{white-space:pre-wrap;background:#f7f8fa;border:1px solid var(--line);border-radius:6px;padding:8px;font-size:15px}
+h3{font-size:14px;margin:12px 0 4px;color:var(--muted);font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+.mic.on{background:var(--bad);border-color:var(--bad);color:#fff}
+</style>
+</head>
+<body>
+<header>
+  <h1>English Log<small>每日英文日记</small></h1>
+  <nav>
+    <button data-v="today" class="on">Today 今天</button>
+    <button data-v="history">History 历史</button>
+    <button data-v="settings">Settings 设置</button>
+  </nav>
+</header>
+<main>
+<section id="v-today" class="on">
+  <div class="card">
+    <label for="date">Date 日期</label>
+    <input type="date" id="date">
+    <label for="orig" style="margin-top:12px">What happened today? 写或用键盘麦克风口述</label>
+    <textarea id="orig" placeholder="Today I ..."></textarea>
+    <div class="row" style="margin-top:6px">
+      <span class="hint grow" id="wc">0 words</span>
+      <button class="b mic" id="mic" hidden>🎤 Dictate</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="b p" id="check">Check with DeepSeek 纠错</button>
+      <button class="b" id="save">Save 保存</button>
+      <button class="b" id="clear">New 清空</button>
+    </div>
+    <div class="msg" id="tmsg"></div>
+  </div>
+  <div class="card" id="result" hidden>
+    <div class="row"><b class="grow">Changes 修改建议 <span id="ccount"></span></b></div>
+    <div id="changes"></div>
+    <h3>Natural version 自然版本</h3>
+    <div class="txt" id="corr"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="b p" id="use">Use corrected 采用并保存</button>
+    </div>
+    <p class="hint">Save stores both your original and the corrected text. 原文和修改后都会保存。</p>
+  </div>
+</section>
+
+<section id="v-history">
+  <div class="stats" id="stats"></div>
+  <p class="hint" id="trend" style="margin:8px 0 12px"></p>
+  <div id="list"></div>
+  <div class="row" style="margin-top:12px">
+    <button class="b" id="exp">Export 导出备份</button>
+    <button class="b" id="imp">Import 导入</button>
+    <input type="file" id="impf" accept="application/json,.json" hidden>
+  </div>
+  <p class="hint">Entries live only in this browser. Export regularly. 数据只存在本浏览器，请定期导出。</p>
+</section>
+
+<section id="v-settings">
+  <div class="card">
+    <label for="key">DeepSeek API key</label>
+    <div class="row">
+      <input class="grow" type="password" id="key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-..." style="width:auto">
+      <button class="b" id="showkey">Show</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="b p" id="savekey">Save key 保存</button>
+      <button class="b d" id="clearkey">Clear key 清除</button>
+    </div>
+    <div class="msg" id="kmsg"></div>
+    <p class="hint">The key is stored only in this browser (localStorage), never exported or uploaded except to api.deepseek.com. 密钥只存在本机浏览器，导出文件不含密钥。Cost comes from your DeepSeek balance; each check is roughly a fraction of a cent.</p>
+  </div>
+  <div class="card">
+    <b>Privacy 隐私</b>
+    <p class="hint">When you tap "Check", the entry text is sent to DeepSeek. Saved entries stay in this browser only. 点"纠错"时日记内容会发送给 DeepSeek。</p>
+  </div>
+</section>
+</main>
+
+<script id="core">
+// ---- pure functions (tested in tests/core.test.js) ----
+var MAX_CHARS = 8000;
+function wordCount(s){ var m = String(s||'').trim().match(/[A-Za-z0-9'’-]+/g); return m ? m.length : 0; }
+function todayStr(d){ d = d || new Date(); var m = d.getMonth()+1, day = d.getDate(); return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day; }
+function dayNum(s){ var p = s.split('-'); return Math.round(Date.UTC(+p[0], +p[1]-1, +p[2]) / 86400000); }
+// streak of consecutive days ending today (or yesterday, if today not written yet)
+function calcStreak(dates, today){
+  var set = {}; dates.forEach(function(d){ set[dayNum(d)] = 1; });
+  var t = dayNum(today), n = 0;
+  if (!set[t]) t -= 1;
+  while (set[t]) { n++; t--; }
+  return n;
+}
+function per100(e){ var w = wordCount(e.original); return w ? (e.changes ? e.changes.length : (e.issues||0)) * 100 / w : 0; }
+function avg(a){ return a.length ? a.reduce(function(x,y){return x+y;},0)/a.length : null; }
+function sortEntries(entries){ return entries.slice().sort(function(a,b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : (b.savedAt||'').localeCompare(a.savedAt||''); }); }
+function calcStats(entries, today){
+  var s = sortEntries(entries);
+  var rates = s.map(per100);
+  var words = s.reduce(function(t,e){ return t + wordCount(e.original); }, 0);
+  return {
+    total: s.length,
+    streak: calcStreak(s.map(function(e){return e.date;}), today),
+    words: words,
+    last7: avg(rates.slice(0,7)),
+    earlier: avg(rates.slice(7))
+  };
+}
+function buildMessages(text){
+  return [
+    {role:'system', content:
+      'You are an English writing coach for a Chinese professional (medical device quality engineer) keeping a daily English journal. '+
+      'Rewrite the journal entry into natural, spoken-style English that a native speaker would say, keeping the meaning, facts and first-person voice. Do not add new content. '+
+      'Return ONLY a JSON object: {"corrected": string, "changes": [{"original": string, "natural": string, "why": string, "alternative": string}]}. '+
+      '"original" is the exact fragment or sentence from the user text, "natural" the improved version, "why" a short reason in simple English (max 20 words), '+
+      '"alternative" an optional other natural way to say it (empty string if none). List at most 8 of the most useful changes, most important first. '+
+      'If the text is already natural, return it unchanged with an empty changes array.'},
+    {role:'user', content: text}
+  ];
+}
+function buildRequest(text){
+  return { model:'deepseek-chat', temperature:0.3, response_format:{type:'json_object'}, messages: buildMessages(text) };
+}
+// Parse model content -> {corrected, changes}; throws on invalid
+function parseResult(content, fallback){
+  var s = String(content||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```$/,'').trim();
+  var j = JSON.parse(s);
+  if (typeof j !== 'object' || j === null) throw new Error('bad json');
+  var corrected = typeof j.corrected === 'string' && j.corrected.trim() ? j.corrected : fallback;
+  var changes = Array.isArray(j.changes) ? j.changes.filter(function(c){ return c && (c.original || c.natural); }).slice(0,8).map(function(c){
+    return { original:String(c.original||''), natural:String(c.natural||''), why:String(c.why||''), alternative:String(c.alternative||'') };
+  }) : [];
+  return { corrected: corrected, changes: changes };
+}
+function errorMessage(status, body){
+  if (status === 0) return 'Network error — check your connection. You can still save the original. 网络错误，原文仍可保存。';
+  if (status === 401) return 'Invalid API key (401). Check it in Settings. 密钥无效。';
+  if (status === 402) return 'Insufficient DeepSeek balance (402). Top up at platform.deepseek.com. 余额不足。';
+  if (status === 429) return 'Too many requests (429). Wait a moment and retry. 请求过多，稍后再试。';
+  if (status >= 500) return 'DeepSeek server busy ('+status+'). Try again later. 服务器繁忙。';
+  return 'Request failed ('+status+')' + (body ? ': '+String(body).slice(0,120) : '') + '. 请求失败。';
+}
+// merge saving for the same date: mode 'overwrite' | 'append'
+function mergeEntry(entries, entry, mode){
+  var i = -1; entries.forEach(function(e,k){ if (e.date === entry.date) i = k; });
+  var out = entries.slice();
+  if (i < 0) { out.push(entry); return out; }
+  if (mode === 'append') {
+    var old = out[i];
+    out[i] = { id: old.id, date: old.date,
+      original: old.original + '\n\n' + entry.original,
+      corrected: (old.corrected || old.original) + '\n\n' + (entry.corrected || entry.original),
+      changes: (old.changes||[]).concat(entry.changes||[]),
+      savedAt: entry.savedAt };
+  } else { entry.id = out[i].id; out[i] = entry; }
+  return out;
+}
+function validateImport(data){
+  var arr = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : null);
+  if (!arr) throw new Error('No entries found');
+  return arr.filter(function(e){ return e && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && typeof e.original === 'string'; }).map(function(e){
+    return { id: e.id || ('e'+Date.now()+Math.random().toString(36).slice(2,7)), date:e.date, original:e.original,
+      corrected: typeof e.corrected==='string'?e.corrected:'', changes: Array.isArray(e.changes)?e.changes:[], savedAt: e.savedAt||new Date().toISOString() };
+  });
+}
+if (typeof module !== 'undefined') module.exports = { wordCount, todayStr, dayNum, calcStreak, per100, calcStats, buildRequest, parseResult, errorMessage, mergeEntry, validateImport, sortEntries, MAX_CHARS };
+</script>
+
+<script>
+(function(){
+  var KE='englog.entries.v1', KK='englog.deepseekKey', KD='englog.draft';
+  var $ = function(id){ return document.getElementById(id); };
+  var last = null; // last check result {for, corrected, changes}
+  function load(){ try { return JSON.parse(localStorage.getItem(KE)) || []; } catch(e){ return []; } }
+  function store(a){ localStorage.setItem(KE, JSON.stringify(a)); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function msg(el, text, cls){ el.textContent = text; el.className = 'msg on' + (cls ? ' '+cls : ''); }
+  function hide(el){ el.className = 'msg'; }
+
+  // nav
+  document.querySelectorAll('nav button').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('nav button').forEach(function(x){ x.classList.toggle('on', x===b); });
+      document.querySelectorAll('section').forEach(function(s){ s.classList.toggle('on', s.id === 'v-'+b.dataset.v); });
+      if (b.dataset.v === 'history') renderHistory();
+      window.scrollTo(0,0);
+    };
+  });
+
+  // today
+  $('date').value = todayStr();
+  $('orig').value = localStorage.getItem(KD) || '';
+  function updWc(){ var n = wordCount($('orig').value), c = $('orig').value.length; $('wc').textContent = n + ' words' + (c > MAX_CHARS ? ' · too long (max '+MAX_CHARS+' chars) 太长' : ''); }
+  $('orig').oninput = function(){ localStorage.setItem(KD, $('orig').value); updWc(); if (last && last.for !== $('orig').value) $('result').hidden = true; };
+  updWc();
+
+  $('check').onclick = function(){
+    var text = $('orig').value.trim(), key = localStorage.getItem(KK) || '', tm = $('tmsg');
+    if (!text) return msg(tm, 'Write something first. 先写点内容。', 'err');
+    if (text.length > MAX_CHARS) return msg(tm, 'Entry too long (max '+MAX_CHARS+' characters). Split it. 内容太长，请分开。', 'err');
+    if (!key) return msg(tm, 'No DeepSeek key yet — add it in Settings. You can still save the original. 请先在设置里填入密钥。', 'err');
+    var btn = $('check'); btn.disabled = true; msg(tm, 'Checking… 纠错中（约 5–20 秒）');
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 60000);
+    fetch('https://api.deepseek.com/chat/completions', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify(buildRequest(text)), signal: ctrl ? ctrl.signal : undefined
+    }).then(function(r){
+      return r.text().then(function(t){
+        if (!r.ok) { var m = t; try { m = JSON.parse(t).error.message; } catch(e){} throw { status:r.status, body:m }; }
+        var j = JSON.parse(t);
+        return parseResult(j.choices[0].message.content, text);
+      });
+    }).then(function(res){
+      last = { for: $('orig').value, corrected: res.corrected, changes: res.changes };
+      renderResult(); hide(tm);
+    }).catch(function(e){
+      if (e && e.status) msg(tm, errorMessage(e.status, e.body), 'err');
+      else if (e && e.name === 'AbortError') msg(tm, 'Timed out after 60s. Try again. 超时。', 'err');
+      else if (e instanceof SyntaxError || (e && e.message === 'bad json')) msg(tm, 'Could not read DeepSeek reply. Try again. 返回格式异常，请重试。', 'err');
+      else msg(tm, errorMessage(0), 'err');
+    }).then(function(){ clearTimeout(timer); btn.disabled = false; });
+  };
+
+  function changeHtml(c){
+    return '<div class="chg"><div><span class="k">You</span><span class="o">'+esc(c.original)+'</span></div>'+
+      '<div><span class="k">Natural</span><span class="n">'+esc(c.natural)+'</span></div>'+
+      (c.why ? '<div class="w"><span class="k">Why</span>'+esc(c.why)+'</div>' : '')+
+      (c.alternative ? '<div class="a"><span class="k">Or</span>'+esc(c.alternative)+'</div>' : '')+'</div>';
+  }
+  function renderResult(){
+    $('result').hidden = false;
+    $('ccount').textContent = '('+last.changes.length+')';
+    $('changes').innerHTML = last.changes.length ? last.changes.map(changeHtml).join('') : '<p class="hint">Looks natural already. 已经很自然了。</p>';
+    $('corr').textContent = last.corrected;
+    $('result').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function doSave(useCorrected){
+    var text = $('orig').value.trim(), date = $('date').value, tm = $('tmsg');
+    if (!text) return msg(tm, 'Nothing to save. 没有内容。', 'err');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return msg(tm, 'Pick a date. 请选日期。', 'err');
+    var has = last && last.for === $('orig').value;
+    var entry = { id:'e'+Date.now(), date:date, original:text, corrected: has ? last.corrected : '', changes: has ? last.changes : [], savedAt:new Date().toISOString() };
+    var entries = load(), mode = 'overwrite';
+    if (entries.some(function(e){ return e.date === date; })) {
+      if (confirm('An entry for '+date+' exists.\nOK = append to it 追加\nCancel = choose overwrite 选择覆盖')) mode = 'append';
+      else if (confirm('Overwrite the existing '+date+' entry? 覆盖原来的？')) mode = 'overwrite';
+      else return;
+    }
+    store(mergeEntry(entries, entry, mode));
+    localStorage.removeItem(KD);
+    msg(tm, 'Saved for '+date+(has ? ' with '+entry.changes.length+' changes' : ' (original only)')+'. 已保存。', 'ok');
+  }
+  $('save').onclick = function(){ doSave(false); };
+  $('use').onclick = function(){ doSave(true); };
+  $('clear').onclick = function(){
+    if ($('orig').value.trim() && !confirm('Clear the text box? Unsaved text will be lost. 清空？')) return;
+    $('orig').value = ''; localStorage.removeItem(KD); last = null; $('result').hidden = true; hide($('tmsg')); $('date').value = todayStr(); updWc();
+  };
+
+  // dictation (only if supported; iPhone keyboard mic works anyway)
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    var rec = null, mic = $('mic'); mic.hidden = false;
+    mic.onclick = function(){
+      if (rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = false;
+      rec.onresult = function(ev){ var t = ''; for (var i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) t += ev.results[i][0].transcript; if (t) { var o = $('orig'); o.value = (o.value && !/\s$/.test(o.value) ? o.value + ' ' : o.value) + t.trim(); o.oninput(); } };
+      rec.onerror = function(ev){ msg($('tmsg'), 'Dictation error: '+ev.error+'. Use the keyboard mic instead. 可改用键盘麦克风。', 'err'); };
+      rec.onend = function(){ rec = null; mic.classList.remove('on'); mic.textContent = '🎤 Dictate'; };
+      try { rec.start(); mic.classList.add('on'); mic.textContent = '■ Stop'; } catch(e){ rec = null; }
+    };
+  }
+
+  // history
+  function fmt(n){ return n === null ? '–' : n.toFixed(1); }
+  function renderHistory(){
+    var entries = sortEntries(load()), st = calcStats(entries, todayStr());
+    $('stats').innerHTML = [['Entries 篇数', st.total], ['Streak 连续天数', st.streak], ['Words 总词数', st.words], ['Changes/100w (last 7)', fmt(st.last7)]]
+      .map(function(x){ return '<div class="stat"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>'; }).join('');
+    $('trend').textContent = st.total ? ('Changes per 100 words — last 7 entries: '+fmt(st.last7)+' · earlier: '+fmt(st.earlier)+
+      (st.earlier !== null && st.last7 !== null ? (st.last7 < st.earlier ? '  ↓ improving 进步中' : st.last7 > st.earlier ? '  ↑ more fixes lately' : '  = same') : '')) : '';
+    if (!entries.length) { $('list').innerHTML = '<p class="empty">No entries yet. 还没有日记。</p>'; return; }
+    $('list').innerHTML = entries.map(function(e){
+      var ch = e.changes || [];
+      return '<details class="e"><summary><b>'+esc(e.date)+'</b><span>'+wordCount(e.original)+' words · '+ch.length+' changes</span></summary><div class="body">'+
+        '<h3>Original 原文</h3><div class="txt">'+esc(e.original)+'</div>'+
+        (e.corrected ? '<h3>Natural 修改后</h3><div class="txt">'+esc(e.corrected)+'</div>' : '<p class="hint">Not checked. 未纠错。</p>')+
+        (ch.length ? '<h3>Changes</h3>'+ch.map(changeHtml).join('') : '')+
+        '<div class="row" style="margin-top:10px"><button class="b" data-edit="'+esc(e.id)+'">Edit 编辑</button><button class="b d" data-del="'+esc(e.id)+'">Delete 删除</button></div></div></details>';
+    }).join('');
+  }
+  $('list').onclick = function(ev){
+    var t = ev.target, id;
+    if ((id = t.getAttribute('data-del'))) {
+      var e = load().filter(function(x){ return x.id === id; })[0];
+      if (e && confirm('Delete the entry for '+e.date+'? This cannot be undone. 删除后无法恢复。')) { store(load().filter(function(x){ return x.id !== id; })); renderHistory(); }
+    } else if ((id = t.getAttribute('data-edit'))) {
+      var en = load().filter(function(x){ return x.id === id; })[0]; if (!en) return;
+      $('date').value = en.date; $('orig').value = en.original; $('orig').oninput(); last = null; $('result').hidden = true;
+      document.querySelector('nav button[data-v=today]').click();
+      msg($('tmsg'), 'Editing '+en.date+'. Saving will ask to overwrite. 正在编辑，保存时选覆盖。');
+    }
+  };
+
+  // export / import (never includes the key)
+  $('exp').onclick = function(){
+    var data = { app:'english-log', version:1, exportedAt:new Date().toISOString(), entries: load() };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'english-log-'+todayStr()+'.json';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+  $('imp').onclick = function(){ $('impf').click(); };
+  $('impf').onchange = function(){
+    var f = this.files[0]; if (!f) return; var rd = new FileReader();
+    rd.onload = function(){
+      try {
+        var inc = validateImport(JSON.parse(rd.result)), cur = load(), ids = {}, added = 0;
+        cur.forEach(function(e){ ids[e.id] = 1; });
+        inc.forEach(function(e){ if (!ids[e.id]) { cur.push(e); added++; } });
+        store(cur); renderHistory(); alert('Imported '+added+' new entries ('+(inc.length-added)+' already here). 导入完成。');
+      } catch(e){ alert('Import failed: not a valid English Log file. 文件格式不对。'); }
+      $('impf').value = '';
+    };
+    rd.readAsText(f);
+  };
+
+  // settings
+  var key = $('key'), km = $('kmsg');
+  if (localStorage.getItem(KK)) { key.placeholder = 'Key saved ✓ (paste to replace)'; }
+  $('showkey').onclick = function(){ var s = key.type === 'password'; key.type = s ? 'text' : 'password'; this.textContent = s ? 'Hide' : 'Show'; };
+  $('savekey').onclick = function(){
+    var v = key.value.trim(); if (!v) return msg(km, 'Paste a key first. 请先粘贴密钥。', 'err');
+    localStorage.setItem(KK, v); key.value = ''; key.type = 'password'; $('showkey').textContent = 'Show'; key.placeholder = 'Key saved ✓ (paste to replace)'; msg(km, 'Saved on this device. 已保存在本机。', 'ok');
+  };
+  $('clearkey').onclick = function(){ if (confirm('Remove the key from this browser? 清除密钥？')) { localStorage.removeItem(KK); key.value = ''; key.placeholder = 'sk-...'; msg(km, 'Key removed. 已清除。', 'ok'); } };
+})();
+</script>
+</body>
+</html>
