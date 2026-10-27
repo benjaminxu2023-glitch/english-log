@@ -310,11 +310,16 @@ if (typeof module !== 'undefined') module.exports = { wordCount, todayStr, dayNu
 
   // dictation (only if supported; iPhone keyboard mic works anyway)
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SR) {
+  var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (IOS) {
+    // iOS Safari web speech is unreliable (often 'aborted'); use the keyboard mic instead
+    var micI = $('mic'); micI.hidden = false;
+    micI.onclick = function(){ var o = $('orig'); o.focus(); msg($('tmsg'), 'Tap the 🎙 mic on the keyboard (bottom right) to dictate. 点键盘右下角的麦克风口述。', 'ok'); };
+  } else if (SR) {
     var rec = null, mic = $('mic'); mic.hidden = false;
     mic.onclick = function(){
       if (rec) { rec.stop(); return; }
-      rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = false;
+      rec = new SR(); rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = false;
       rec.onresult = function(ev){ var t = ''; for (var i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) t += ev.results[i][0].transcript; if (t) { var o = $('orig'); o.value = (o.value && !/\s$/.test(o.value) ? o.value + ' ' : o.value) + t.trim(); o.oninput(); } };
       rec.onerror = function(ev){ msg($('tmsg'), 'Dictation error: '+ev.error+'. Use the keyboard mic instead. 可改用键盘麦克风。', 'err'); };
       rec.onend = function(){ rec = null; mic.classList.remove('on'); mic.textContent = '🎤 Dictate'; };
